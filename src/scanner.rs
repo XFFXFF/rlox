@@ -54,14 +54,43 @@ impl Scanner {
                 '+' => self.add_token(SyntaxKind::Plus),
                 ';' => self.add_token(SyntaxKind::Semicolon),
                 '*' => self.add_token(SyntaxKind::Star),
+
+                // two-char-tokens
+                #[rustfmt::skip]
+                '!' => self.add_token_based_on_next_char(
+                    '=',
+                    SyntaxKind::BangEqual,
+                    SyntaxKind::Bang,
+                ),
+                '=' => self.add_token_based_on_next_char(
+                    '=',
+                    SyntaxKind::EqualEqual,
+                    SyntaxKind::Equal,
+                ),
+                #[rustfmt::skip]
+                '<' => self.add_token_based_on_next_char(
+                    '=',
+                    SyntaxKind::LessEqual,
+                    SyntaxKind::Less
+                ),
+                '>' => self.add_token_based_on_next_char(
+                    '=',
+                    SyntaxKind::GreaterEqual,
+                    SyntaxKind::Greater,
+                ),
+
                 _ => {}
             }
         }
         self.tokens.iter()
     }
 
+    fn current(&self) -> Option<char> {
+        self.source.chars().nth(self.current)
+    }
+
     fn advance(&mut self) -> Option<char> {
-        let char = self.source.chars().nth(self.current);
+        let char = self.current();
         self.current += 1;
         char
     }
@@ -70,6 +99,23 @@ impl Scanner {
         let text = &self.source[self.start..self.current];
         let token = SyntaxToken::new(kind, text);
         self.tokens.push(token);
+    }
+
+    fn add_token_based_on_next_char(
+        &mut self,
+        expected: char,
+        expected_syntax_kind: SyntaxKind,
+        otherwise_syntax_kind: SyntaxKind,
+    ) {
+        if let Some(c) = self.current() {
+            if c == expected {
+                self.current += 1;
+                self.add_token(expected_syntax_kind);
+            }
+            self.add_token(otherwise_syntax_kind);
+        } else {
+            self.add_token(otherwise_syntax_kind);
+        }
     }
 }
 
@@ -99,9 +145,9 @@ mod tests {
         test_scan_one_token("+", SyntaxKind::Plus);
         test_scan_one_token(";", SyntaxKind::Semicolon);
         test_scan_one_token("*", SyntaxKind::Star);
-        // test_scan_one_token("!", SyntaxKind::Bang);
-        // test_scan_one_token("=", SyntaxKind::Equal);
-        // test_scan_one_token("<", SyntaxKind::Less);
-        // test_scan_one_token(">", SyntaxKind::Greater)
+        test_scan_one_token("!", SyntaxKind::Bang);
+        test_scan_one_token("=", SyntaxKind::Equal);
+        test_scan_one_token("<", SyntaxKind::Less);
+        test_scan_one_token(">", SyntaxKind::Greater)
     }
 }
