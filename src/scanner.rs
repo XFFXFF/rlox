@@ -1,6 +1,6 @@
 use crate::kinds::SyntaxKind;
 
-#[derive(Clone, PartialEq, Eq)]
+#[derive(Clone, PartialEq, Eq, Debug)]
 struct SyntaxToken {
     kind: SyntaxKind,
     text: String,
@@ -111,8 +111,9 @@ impl Scanner {
             if c == expected {
                 self.current += 1;
                 self.add_token(expected_syntax_kind);
+            } else {
+                self.add_token(otherwise_syntax_kind);
             }
-            self.add_token(otherwise_syntax_kind);
         } else {
             self.add_token(otherwise_syntax_kind);
         }
@@ -149,5 +150,13 @@ mod tests {
         test_scan_one_token("=", SyntaxKind::Equal);
         test_scan_one_token("<", SyntaxKind::Less);
         test_scan_one_token(">", SyntaxKind::Greater)
+    }
+
+    #[test]
+    fn test_two_chars_token() {
+        test_scan_one_token("!=", SyntaxKind::BangEqual);
+        test_scan_one_token("==", SyntaxKind::EqualEqual);
+        test_scan_one_token("<=", SyntaxKind::LessEqual);
+        test_scan_one_token(">=", SyntaxKind::GreaterEqual);
     }
 }
