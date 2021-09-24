@@ -82,18 +82,23 @@ impl Scanner {
                 // slash
                 '/' => self.slash(),
 
-                _ => {}
+                // whitespace
+                ' ' | '\r' | '\t' | '\n' => {},
+
+                '"' => self.string(),
+
+                _ => panic!("Unexpected character.")
             }
         }
         self.tokens.iter()
     }
 
-    fn current(&self) -> Option<char> {
+    fn peek(&self) -> Option<char> {
         self.source.chars().nth(self.current)
     }
 
     fn advance(&mut self) -> Option<char> {
-        let char = self.current();
+        let char = self.peek();
         self.current += 1;
         char
     }
@@ -110,7 +115,7 @@ impl Scanner {
         expected_syntax_kind: SyntaxKind,
         otherwise_syntax_kind: SyntaxKind,
     ) {
-        if let Some(c) = self.current() {
+        if let Some(c) = self.peek() {
             if c == expected {
                 self.current += 1;
                 self.add_token(expected_syntax_kind);
@@ -123,7 +128,7 @@ impl Scanner {
     }
 
     fn slash(&mut self) {
-        if let Some(current) = self.current() {
+        if let Some(current) = self.peek() {
             if current == '/' {
                 while let Some(next) = self.advance() {
                     if next == '\n' {
@@ -136,6 +141,16 @@ impl Scanner {
         } else {
             self.add_token(SyntaxKind::Slash);
         }
+    }
+
+    fn string(&mut self) {
+        while let Some(c) = self.advance() {
+            if c == '"' {
+                self.add_token(SyntaxKind::String);
+                return
+            }
+        }
+        panic!("Unterminated string.")
     }
 }
 
@@ -200,5 +215,23 @@ mod tests {
         test_scan_expected_empty("//");
         test_scan_expected_empty("//asdfasdf");
         test_scan_one_token_with_text("//asdfasdf\n/", SyntaxKind::Slash, "/");
+    }
+
+    #[test]
+    fn whitespace() {
+        test_scan_expected_empty(" ");
+        test_scan_expected_empty("\r");
+        test_scan_expected_empty("\t");
+        test_scan_expected_empty("  ");
+        test_scan_expected_empty("\n");
+        test_scan_expected_empty(
+            "
+        ",
+        );
+    }
+
+    #[test]
+    fn string() {
+        test_scan_one_token("\"hello\"", SyntaxKind::String);
     }
 }
