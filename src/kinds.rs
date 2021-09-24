@@ -45,6 +45,5 @@ pub enum SyntaxKind {
     True,
     Var,
     While,
-
-    Eof,
+    // Eof,
 }

@@ -1,5 +1,17 @@
 use crate::kinds::SyntaxKind;
 
+macro_rules! is_digit {
+    ($c: expr) => {
+        $c >= '0' && $c <= '9'
+    };
+}
+
+macro_rules! is_alpha {
+    ($c: expr) => {
+        ($c >= 'a' && $c <= 'z') || ($c >= 'A' && $c <= 'Z') || $c == '_'
+    };
+}
+
 #[derive(Clone, PartialEq, Eq, Debug)]
 struct SyntaxToken {
     kind: SyntaxKind,
@@ -79,15 +91,17 @@ impl Scanner {
                     SyntaxKind::Greater,
                 ),
 
-                // slash
                 '/' => self.slash(),
 
-                // whitespace
-                ' ' | '\r' | '\t' | '\n' => {},
+                ' ' | '\r' | '\t' | '\n' => {}
 
                 '"' => self.string(),
 
-                _ => panic!("Unexpected character.")
+                '0'..='9' => self.number(),
+
+                'a'..='z' | 'A'..='Z' | '_' => self.identifier(),
+
+                _ => panic!("Unexpected character."),
             }
         }
         self.tokens.iter()
@@ -147,10 +161,49 @@ impl Scanner {
         while let Some(c) = self.advance() {
             if c == '"' {
                 self.add_token(SyntaxKind::String);
-                return
+                return;
             }
         }
         panic!("Unterminated string.")
+    }
+
+    fn number(&mut self) {
+        while let Some(c) = self.advance() {
+            if !is_digit!(c) && c != '.' {
+                break;
+            }
+        }
+        self.current -= 1;
+        self.add_token(SyntaxKind::Number);
+    }
+
+    fn identifier(&mut self) {
+        while let Some(c) = self.advance() {
+            if !is_alpha!(c) {
+                break;
+            }
+        }
+        self.current -= 1;
+        let text = &self.source[self.start..self.current];
+        match text {
+            "and" => self.add_token(SyntaxKind::And),
+            "class" => self.add_token(SyntaxKind::Class),
+            "else" => self.add_token(SyntaxKind::Else),
+            "false" => self.add_token(SyntaxKind::False),
+            "for" => self.add_token(SyntaxKind::For),
+            "fun" => self.add_token(SyntaxKind::Fun),
+            "if" => self.add_token(SyntaxKind::If),
+            "nil" => self.add_token(SyntaxKind::Nil),
+            "or" => self.add_token(SyntaxKind::Or),
+            "print" => self.add_token(SyntaxKind::Print),
+            "return" => self.add_token(SyntaxKind::Return),
+            "super" => self.add_token(SyntaxKind::Super),
+            "this" => self.add_token(SyntaxKind::This),
+            "true" => self.add_token(SyntaxKind::True),
+            "var" => self.add_token(SyntaxKind::Var),
+            "while" => self.add_token(SyntaxKind::While),
+            _ => self.add_token(SyntaxKind::Identifier),
+        }
     }
 }
 
@@ -233,5 +286,48 @@ mod tests {
     #[test]
     fn string() {
         test_scan_one_token("\"hello\"", SyntaxKind::String);
+        test_scan_one_token("\"\"", SyntaxKind::String);
+        test_scan_one_token("\" \"", SyntaxKind::String);
+    }
+
+    #[test]
+    fn number() {
+        test_scan_one_token("123", SyntaxKind::Number);
+        // TODO: should panic?
+        test_scan_one_token("0123", SyntaxKind::Number);
+        test_scan_one_token("123.", SyntaxKind::Number);
+        test_scan_one_token("123.43", SyntaxKind::Number);
+        // TODO: should panic?
+        test_scan_one_token("123..43", SyntaxKind::Number);
+        // TODO: should panic?
+        test_scan_one_token("123.4.3", SyntaxKind::Number);
+    }
+
+    #[test]
+    fn keyword() {
+        test_scan_one_token("and", SyntaxKind::And);
+        test_scan_one_token("class", SyntaxKind::Class);
+        test_scan_one_token("else", SyntaxKind::Else);
+        test_scan_one_token("false", SyntaxKind::False);
+        test_scan_one_token("for", SyntaxKind::For);
+        test_scan_one_token("fun", SyntaxKind::Fun);
+        test_scan_one_token("if", SyntaxKind::If);
+        test_scan_one_token("nil", SyntaxKind::Nil);
+        test_scan_one_token("or", SyntaxKind::Or);
+        test_scan_one_token("print", SyntaxKind::Print);
+        test_scan_one_token("return", SyntaxKind::Return);
+        test_scan_one_token("super", SyntaxKind::Super);
+        test_scan_one_token("this", SyntaxKind::This);
+        test_scan_one_token("true", SyntaxKind::True);
+        test_scan_one_token("var", SyntaxKind::Var);
+        test_scan_one_token("while", SyntaxKind::While);
+    }
+
+    #[test]
+    fn identifier() {
+        test_scan_one_token("key", SyntaxKind::Identifier);
+        test_scan_one_token("_key", SyntaxKind::Identifier);
+        test_scan_one_token("__key", SyntaxKind::Identifier);
+        test_scan_one_token("k_e_y", SyntaxKind::Identifier);
     }
 }
