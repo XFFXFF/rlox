@@ -79,6 +79,9 @@ impl Scanner {
                     SyntaxKind::Greater,
                 ),
 
+                // slash
+                '/' => self.slash(),
+
                 _ => {}
             }
         }
@@ -118,6 +121,22 @@ impl Scanner {
             self.add_token(otherwise_syntax_kind);
         }
     }
+
+    fn slash(&mut self) {
+        if let Some(current) = self.current() {
+            if current == '/' {
+                while let Some(next) = self.advance() {
+                    if next == '\n' {
+                        break;
+                    }
+                }
+            } else {
+                self.add_token(SyntaxKind::Slash);
+            }
+        } else {
+            self.add_token(SyntaxKind::Slash);
+        }
+    }
 }
 
 #[cfg(test)]
@@ -134,8 +153,23 @@ mod tests {
         assert_eq!(token.text(), source);
     }
 
+    fn test_scan_one_token_with_text(source: &str, kind: SyntaxKind, text: &str) {
+        let mut scanner = Scanner::new(source);
+        let tokens = scanner.scan().collect::<Vec<&SyntaxToken>>();
+        assert_eq!(tokens.len(), 1);
+        let &token = tokens.first().unwrap();
+        assert_eq!(token.kind(), kind);
+        assert_eq!(token.text(), text);
+    }
+
+    fn test_scan_expected_empty(source: &str) {
+        let mut scanner = Scanner::new(source);
+        let tokens = scanner.scan().collect::<Vec<&SyntaxToken>>();
+        assert_eq!(tokens.len(), 0);
+    }
+
     #[test]
-    fn test_single_char_token() {
+    fn single_char_token() {
         test_scan_one_token("(", SyntaxKind::LeftParen);
         test_scan_one_token(")", SyntaxKind::RightParen);
         test_scan_one_token("{", SyntaxKind::LeftBrace);
@@ -153,10 +187,18 @@ mod tests {
     }
 
     #[test]
-    fn test_two_chars_token() {
+    fn two_chars_token() {
         test_scan_one_token("!=", SyntaxKind::BangEqual);
         test_scan_one_token("==", SyntaxKind::EqualEqual);
         test_scan_one_token("<=", SyntaxKind::LessEqual);
         test_scan_one_token(">=", SyntaxKind::GreaterEqual);
+    }
+
+    #[test]
+    fn slash() {
+        test_scan_one_token("/", SyntaxKind::Slash);
+        test_scan_expected_empty("//");
+        test_scan_expected_empty("//asdfasdf");
+        test_scan_one_token_with_text("//asdfasdf\n/", SyntaxKind::Slash, "/");
     }
 }
