@@ -1,4 +1,5 @@
 use crate::kinds::SyntaxKind;
+use crate::green::SyntaxToken;
 
 macro_rules! is_digit {
     ($c: expr) => {
@@ -10,29 +11,6 @@ macro_rules! is_alpha {
     ($c: expr) => {
         ($c >= 'a' && $c <= 'z') || ($c >= 'A' && $c <= 'Z') || $c == '_'
     };
-}
-
-#[derive(Clone, PartialEq, Eq, Debug)]
-struct SyntaxToken {
-    kind: SyntaxKind,
-    text: String,
-}
-
-impl SyntaxToken {
-    fn new(kind: SyntaxKind, text: &str) -> SyntaxToken {
-        SyntaxToken {
-            kind,
-            text: text.to_string(),
-        }
-    }
-
-    fn kind(&self) -> SyntaxKind {
-        self.kind.clone()
-    }
-
-    fn text(&self) -> &str {
-        self.text.as_str()
-    }
 }
 
 struct Scanner {
@@ -119,7 +97,7 @@ impl Scanner {
 
     fn add_token(&mut self, kind: SyntaxKind) {
         let text = &self.source[self.start..self.current];
-        let token = SyntaxToken::new(kind, text);
+        let token = SyntaxToken::new(kind, text.to_string());
         self.tokens.push(token);
     }
 
