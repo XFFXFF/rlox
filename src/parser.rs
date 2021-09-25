@@ -12,7 +12,22 @@ impl Parser {
     }
 
     pub fn parse(&mut self) -> SyntaxNode {
-        self.primary()
+        self.unary()
+    }
+
+    fn unary(&mut self) -> SyntaxNode {
+        if let Some(token) = self.peek() {
+            let node = match token.kind() {
+                SyntaxKind::Bang | SyntaxKind::Minus => {
+                    self.advance();
+                    let right = self.unary();
+                    SyntaxNode::new(SyntaxKind::Unary, vec![token.into(), right.into()])
+                },
+                _ => self.primary(),
+            };
+            return node;
+        }
+        panic!("No more tokens left");
     }
 
     fn primary(&mut self) -> SyntaxNode {
@@ -56,11 +71,18 @@ mod tests {
     }
 
     #[test]
-    fn smoke() {
+    fn primary() {
         check_parse("1", SyntaxKind::Literal);
         check_parse("true", SyntaxKind::Literal);
         check_parse("false", SyntaxKind::Literal);
         check_parse("nil", SyntaxKind::Literal);
         check_parse("\"hello\"", SyntaxKind::Literal);
+    }
+
+    #[test]
+    fn unary() {
+        check_parse("!true", SyntaxKind::Unary);
+        check_parse("!false", SyntaxKind::Unary);
+        check_parse("!!false", SyntaxKind::Unary);
     }
 }

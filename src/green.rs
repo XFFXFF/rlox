@@ -65,6 +65,12 @@ impl SyntaxNode {
     }
 }
 
+impl From<SyntaxNode> for SyntaxElement {
+    fn from(node: SyntaxNode) -> Self {
+        NodeOrToken::Node(node)
+    }
+}
+
 impl fmt::Display for SyntaxNode {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         for child in self.children() {
