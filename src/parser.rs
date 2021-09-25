@@ -23,9 +23,12 @@ impl Parser {
                 SyntaxKind::BangEqual | SyntaxKind::EqualEqual => {
                     self.advance();
                     let right = self.comparison();
-                    left = SyntaxNode::new(SyntaxKind::BinExpr, vec![left.into(), token.into(), right.into()])
-                },
-                _ => break
+                    left = SyntaxNode::new(
+                        SyntaxKind::BinExpr,
+                        vec![left.into(), token.into(), right.into()],
+                    )
+                }
+                _ => break,
             }
         }
         left
@@ -36,12 +39,18 @@ impl Parser {
 
         while let Some(token) = self.peek() {
             match token.kind() {
-                SyntaxKind::Greater | SyntaxKind::GreaterEqual | SyntaxKind::Less | SyntaxKind::LessEqual => {
+                SyntaxKind::Greater
+                | SyntaxKind::GreaterEqual
+                | SyntaxKind::Less
+                | SyntaxKind::LessEqual => {
                     self.advance();
                     let right = self.term();
-                    left = SyntaxNode::new(SyntaxKind::BinExpr, vec![left.into(), token.into(), right.into()]);
-                },
-                _ => break
+                    left = SyntaxNode::new(
+                        SyntaxKind::BinExpr,
+                        vec![left.into(), token.into(), right.into()],
+                    );
+                }
+                _ => break,
             }
         }
         left
@@ -51,12 +60,16 @@ impl Parser {
         let mut left = self.factor();
 
         while let Some(token) = self.peek() {
-            if let SyntaxKind::Minus | SyntaxKind::Plus = token.kind() {
-                self.advance();
-                let right = self.factor();
-                left = SyntaxNode::new(SyntaxKind::BinExpr, vec![left.into(), token.into(), right.into()]);
-            } else {
-                break
+            match token.kind() {
+                SyntaxKind::Minus | SyntaxKind::Plus => {
+                    self.advance();
+                    let right = self.factor();
+                    left = SyntaxNode::new(
+                        SyntaxKind::BinExpr,
+                        vec![left.into(), token.into(), right.into()],
+                    );
+                }
+                _ => break,
             }
         }
         left
@@ -66,12 +79,16 @@ impl Parser {
         let mut left = self.unary();
 
         while let Some(token) = self.peek() {
-            if let SyntaxKind::Slash | SyntaxKind::Star = token.kind() {
-                self.advance();
-                let right = self.unary();
-                left = SyntaxNode::new(SyntaxKind::BinExpr, vec![left.into(), token.into(), right.into()])
-            } else {
-                break
+            match token.kind() {
+                SyntaxKind::Slash | SyntaxKind::Star => {
+                    self.advance();
+                    let right = self.unary();
+                    left = SyntaxNode::new(
+                        SyntaxKind::BinExpr,
+                        vec![left.into(), token.into(), right.into()],
+                    )
+                }
+                _ => break,
             }
         }
         left
@@ -84,7 +101,7 @@ impl Parser {
                     self.advance();
                     let right = self.unary();
                     SyntaxNode::new(SyntaxKind::UnaryExpr, vec![token.into(), right.into()])
-                },
+                }
                 _ => self.primary(),
             };
             return node;
@@ -100,7 +117,7 @@ impl Parser {
                 | SyntaxKind::Nil
                 | SyntaxKind::Number
                 | SyntaxKind::String => SyntaxNode::new(SyntaxKind::Literal, vec![token.into()]),
-                _ => panic!("{:?} unimplemented", token.kind())
+                _ => panic!("{:?} unimplemented", token.kind()),
             };
             return node;
         }
@@ -129,7 +146,10 @@ mod tests {
         let mut parser = Parser::new(tokens);
         let node = parser.parse();
         assert_eq!(node.kind(), expected_kind);
-        let source_without_whitespace = source.chars().filter(|c| !c.is_whitespace()).collect::<String>();
+        let source_without_whitespace = source
+            .chars()
+            .filter(|c| !c.is_whitespace())
+            .collect::<String>();
         assert_eq!(source_without_whitespace, format!("{}", node));
     }
 
@@ -162,7 +182,7 @@ mod tests {
         check_parse("-1 - 2 / 2", SyntaxKind::BinExpr);
     }
 
-    #[test] 
+    #[test]
     fn comparison() {
         check_parse("1 > 2", SyntaxKind::BinExpr);
         check_parse("1 >= 2", SyntaxKind::BinExpr);
