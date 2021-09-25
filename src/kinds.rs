@@ -49,5 +49,6 @@ pub enum SyntaxKind {
 
     // Node
     Literal,
-    Unary,
+    UnaryExpr,
+    BinExpr,
 }

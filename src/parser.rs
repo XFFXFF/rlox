@@ -12,7 +12,20 @@ impl Parser {
     }
 
     pub fn parse(&mut self) -> SyntaxNode {
-        self.unary()
+        self.factor()
+    }
+
+    fn factor(&mut self) -> SyntaxNode {
+        let mut left = self.unary();
+
+        while let Some(token) = self.peek() {
+            if let SyntaxKind::Slash | SyntaxKind::Star = token.kind() {
+                self.advance();
+                let right = self.unary();
+                left = SyntaxNode::new(SyntaxKind::BinExpr, vec![left.into(), token.into(), right.into()])
+            }
+        }
+        left
     }
 
     fn unary(&mut self) -> SyntaxNode {
@@ -21,7 +34,7 @@ impl Parser {
                 SyntaxKind::Bang | SyntaxKind::Minus => {
                     self.advance();
                     let right = self.unary();
-                    SyntaxNode::new(SyntaxKind::Unary, vec![token.into(), right.into()])
+                    SyntaxNode::new(SyntaxKind::UnaryExpr, vec![token.into(), right.into()])
                 },
                 _ => self.primary(),
             };
@@ -67,7 +80,8 @@ mod tests {
         let mut parser = Parser::new(tokens);
         let node = parser.parse();
         assert_eq!(node.kind(), expected_kind);
-        assert_eq!(source, format!("{}", node));
+        let source_without_whitespace = source.chars().filter(|c| !c.is_whitespace()).collect::<String>();
+        assert_eq!(source_without_whitespace, format!("{}", node));
     }
 
     #[test]
@@ -81,8 +95,14 @@ mod tests {
 
     #[test]
     fn unary() {
-        check_parse("!true", SyntaxKind::Unary);
-        check_parse("!false", SyntaxKind::Unary);
-        check_parse("!!false", SyntaxKind::Unary);
+        check_parse("!true", SyntaxKind::UnaryExpr);
+        check_parse("!false", SyntaxKind::UnaryExpr);
+        check_parse("!!false", SyntaxKind::UnaryExpr);
+    }
+
+    #[test]
+    fn factor() {
+        check_parse("1 / 2", SyntaxKind::BinExpr);
+        check_parse("-1 * 2 / 3", SyntaxKind::BinExpr);
     }
 }
