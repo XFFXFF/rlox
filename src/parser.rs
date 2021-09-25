@@ -44,14 +44,23 @@ impl Parser {
 #[cfg(test)]
 mod tests {
     use super::Parser;
-    use crate::{green::SyntaxNode, kinds::SyntaxKind, scanner::Scanner};
+    use crate::{kinds::SyntaxKind, scanner::Scanner};
 
-    #[test]
-    fn smoke() {
-        let mut scanner = Scanner::new("1");
+    fn check_parse(source: &str, expected_kind: SyntaxKind) {
+        let mut scanner = Scanner::new(source);
         let tokens = scanner.scan().cloned().collect();
         let mut parser = Parser::new(tokens);
         let node = parser.parse();
-        assert_eq!(node.kind(), SyntaxKind::Literal);
+        assert_eq!(node.kind(), expected_kind);
+        assert_eq!(source, format!("{}", node));
+    }
+
+    #[test]
+    fn smoke() {
+        check_parse("1", SyntaxKind::Literal);
+        check_parse("true", SyntaxKind::Literal);
+        check_parse("false", SyntaxKind::Literal);
+        check_parse("nil", SyntaxKind::Literal);
+        check_parse("\"hello\"", SyntaxKind::Literal);
     }
 }
