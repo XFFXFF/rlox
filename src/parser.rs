@@ -110,7 +110,8 @@ impl Parser {
     }
 
     fn primary(&mut self) -> SyntaxNode {
-        if let Some(token) = self.advance() {
+        if let Some(token) = self.peek() {
+            self.advance();
             let node = match token.kind() {
                 SyntaxKind::False
                 | SyntaxKind::True
@@ -128,10 +129,8 @@ impl Parser {
         self.tokens.get(self.current).cloned()
     }
 
-    fn advance(&mut self) -> Option<SyntaxToken> {
-        let token = self.peek();
+    fn advance(&mut self) {
         self.current += 1;
-        token
     }
 }
 
