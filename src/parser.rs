@@ -12,7 +12,39 @@ impl Parser {
     }
 
     pub fn parse(&mut self) -> SyntaxNode {
-        self.term()
+        self.equality()
+    }
+
+    fn equality(&mut self) -> SyntaxNode {
+        let mut left = self.comparison();
+
+        while let Some(token) = self.peek() {
+            match token.kind() {
+                SyntaxKind::BangEqual | SyntaxKind::EqualEqual => {
+                    self.advance();
+                    let right = self.comparison();
+                    left = SyntaxNode::new(SyntaxKind::BinExpr, vec![left.into(), token.into(), right.into()])
+                },
+                _ => break
+            }
+        }
+        left
+    }
+
+    fn comparison(&mut self) -> SyntaxNode {
+        let mut left = self.term();
+
+        while let Some(token) = self.peek() {
+            match token.kind() {
+                SyntaxKind::Greater | SyntaxKind::GreaterEqual | SyntaxKind::Less | SyntaxKind::LessEqual => {
+                    self.advance();
+                    let right = self.term();
+                    left = SyntaxNode::new(SyntaxKind::BinExpr, vec![left.into(), token.into(), right.into()]);
+                },
+                _ => break
+            }
+        }
+        left
     }
 
     fn term(&mut self) -> SyntaxNode {
@@ -128,5 +160,19 @@ mod tests {
         check_parse("1 + 2", SyntaxKind::BinExpr);
         check_parse("1 - 2 + 2", SyntaxKind::BinExpr);
         check_parse("-1 - 2 / 2", SyntaxKind::BinExpr);
+    }
+
+    #[test] 
+    fn comparison() {
+        check_parse("1 > 2", SyntaxKind::BinExpr);
+        check_parse("1 >= 2", SyntaxKind::BinExpr);
+        check_parse("1 < 2", SyntaxKind::BinExpr);
+        check_parse("1 <= 2", SyntaxKind::BinExpr);
+    }
+
+    #[test]
+    fn equality() {
+        check_parse("1 == 2", SyntaxKind::BinExpr);
+        check_parse("1 != 2", SyntaxKind::BinExpr);
     }
 }
