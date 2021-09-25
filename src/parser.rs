@@ -12,7 +12,22 @@ impl Parser {
     }
 
     pub fn parse(&mut self) -> SyntaxNode {
-        self.factor()
+        self.term()
+    }
+
+    fn term(&mut self) -> SyntaxNode {
+        let mut left = self.factor();
+
+        while let Some(token) = self.peek() {
+            if let SyntaxKind::Minus | SyntaxKind::Plus = token.kind() {
+                self.advance();
+                let right = self.factor();
+                left = SyntaxNode::new(SyntaxKind::BinExpr, vec![left.into(), token.into(), right.into()]);
+            } else {
+                break
+            }
+        }
+        left
     }
 
     fn factor(&mut self) -> SyntaxNode {
@@ -23,6 +38,8 @@ impl Parser {
                 self.advance();
                 let right = self.unary();
                 left = SyntaxNode::new(SyntaxKind::BinExpr, vec![left.into(), token.into(), right.into()])
+            } else {
+                break
             }
         }
         left
@@ -104,5 +121,12 @@ mod tests {
     fn factor() {
         check_parse("1 / 2", SyntaxKind::BinExpr);
         check_parse("-1 * 2 / 3", SyntaxKind::BinExpr);
+    }
+
+    #[test]
+    fn term() {
+        check_parse("1 + 2", SyntaxKind::BinExpr);
+        check_parse("1 - 2 + 2", SyntaxKind::BinExpr);
+        check_parse("-1 - 2 / 2", SyntaxKind::BinExpr);
     }
 }
