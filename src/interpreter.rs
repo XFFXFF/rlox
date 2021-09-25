@@ -1,4 +1,4 @@
-use crate::ast::{AstNode, Literal};
+use crate::ast::{self, AstNode};
 use crate::green::SyntaxNode;
 use crate::kinds::SyntaxKind;
 
@@ -20,14 +20,26 @@ impl Interpreter {
     pub fn interpret(&self, syntax_node: SyntaxNode) -> Value {
         match syntax_node.kind() {
             SyntaxKind::Literal => self.evaluate_literal(syntax_node),
+            SyntaxKind::UnaryExpr => self.evaluate_unary(syntax_node),
             _ => panic!("{:?} can not be interpreted", syntax_node.kind()),
+        }
+    }
+
+    fn evaluate_unary(&self, syntax_node: SyntaxNode) -> Value {
+        assert_eq!(syntax_node.kind(), SyntaxKind::UnaryExpr);
+        let unary_expr = ast::UnaryExpr::cast(syntax_node.clone()).unwrap();
+        let value = self.interpret(unary_expr.node());
+        match (unary_expr.op().kind(), &value) {
+            (SyntaxKind::Minus, Value::Number(n)) => Value::Number(-n),
+            (SyntaxKind::Bang, _) => Value::Bool(!Self::is_truthy(&value)),
+            _ => panic!("Invalid Unary Expr: {:?}", syntax_node),
         }
     }
 
     fn evaluate_literal(&self, syntax_node: SyntaxNode) -> Value {
         assert_eq!(syntax_node.kind(), SyntaxKind::Literal);
-        let literal = Literal::cast(syntax_node).unwrap();
-        let token = literal.token().unwrap();
+        let literal = ast::Literal::cast(syntax_node).unwrap();
+        let token = literal.token();
         match token.kind() {
             SyntaxKind::False => Value::Bool(false),
             SyntaxKind::True => Value::Bool(true),
@@ -40,7 +52,15 @@ impl Interpreter {
                 Value::Number(number)
             }
             SyntaxKind::Nil => Value::Nil,
-            _ => panic!("Unexpected token in Literal: {:?}", token),
+            _ => panic!("Unexpected token: {:?}", token),
+        }
+    }
+
+    fn is_truthy(val: &Value) -> bool {
+        match val {
+            Value::Nil => false,
+            Value::Bool(b) => *b,
+            _ => true,
         }
     }
 }
@@ -68,5 +88,13 @@ mod tests {
         check_interpret("false", Value::Bool(false));
         check_interpret("\"hello\"", Value::String("hello".to_string()));
         check_interpret("nil", Value::Nil);
+    }
+
+    #[test]
+    fn unary() {
+        check_interpret("!true", Value::Bool(false));
+        check_interpret("!false", Value::Bool(true));
+        check_interpret("!!!false", Value::Bool(true));
+        check_interpret("-3", Value::Number(-3.));
     }
 }
