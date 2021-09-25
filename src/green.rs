@@ -1,10 +1,26 @@
 use crate::kinds::SyntaxKind;
 use std::fmt;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum NodeOrToken<N, T> {
     Node(N),
     Token(T),
+}
+
+impl<N, T> NodeOrToken<N, T> {
+    pub fn into_node(self) -> Option<N> {
+        match self {
+            NodeOrToken::Node(node) => Some(node),
+            NodeOrToken::Token(_) => None,
+        }
+    }
+
+    pub fn into_token(self) -> Option<T> {
+        match self {
+            NodeOrToken::Node(_) => None,
+            NodeOrToken::Token(token) => Some(token),
+        }
+    }
 }
 
 pub type SyntaxElement = NodeOrToken<SyntaxNode, SyntaxToken>;
@@ -41,7 +57,7 @@ impl From<SyntaxToken> for SyntaxElement {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct SyntaxNode {
     kind: SyntaxKind,
     children: Vec<NodeOrToken<SyntaxNode, SyntaxToken>>,
@@ -60,8 +76,8 @@ impl SyntaxNode {
     }
 
     /// Get a reference to the syntax node's children.
-    pub fn children(&self) -> impl Iterator<Item = &SyntaxElement> {
-        self.children.iter()
+    pub fn children(&self) -> impl Iterator<Item = SyntaxElement> + '_ {
+        self.children.iter().cloned()
     }
 }
 
