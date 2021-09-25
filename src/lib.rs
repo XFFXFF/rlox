@@ -1,3 +1,4 @@
-mod kinds;
-mod scanner;
 mod green;
+mod kinds;
+mod parser;
+mod scanner;

@@ -1,5 +1,5 @@
-use crate::kinds::SyntaxKind;
 use crate::green::SyntaxToken;
+use crate::kinds::SyntaxKind;
 
 macro_rules! is_digit {
     ($c: expr) => {
@@ -13,7 +13,7 @@ macro_rules! is_alpha {
     };
 }
 
-struct Scanner {
+pub struct Scanner {
     source: String,
     tokens: Vec<SyntaxToken>,
     start: usize,
@@ -21,7 +21,7 @@ struct Scanner {
 }
 
 impl Scanner {
-    fn new(source: &str) -> Scanner {
+    pub fn new(source: &str) -> Scanner {
         Scanner {
             source: source.to_string(),
             tokens: Vec::new(),

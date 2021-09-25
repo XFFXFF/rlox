@@ -46,4 +46,7 @@ pub enum SyntaxKind {
     Var,
     While,
     // Eof,
+
+    // Node
+    Literal,
 }
