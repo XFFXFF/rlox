@@ -21,7 +21,47 @@ impl Interpreter {
         match syntax_node.kind() {
             SyntaxKind::Literal => self.evaluate_literal(syntax_node),
             SyntaxKind::UnaryExpr => self.evaluate_unary(syntax_node),
+            SyntaxKind::BinExpr => self.evaluate_binary(syntax_node),
             _ => panic!("{:?} can not be interpreted", syntax_node.kind()),
+        }
+    }
+
+    fn evaluate_binary(&self, syntax_node: SyntaxNode) -> Value {
+        assert_eq!(syntax_node.kind(), SyntaxKind::BinExpr);
+        let bin_expr = ast::BinExpr::cast(syntax_node.clone()).unwrap();
+        let left_val = self.interpret(bin_expr.left());
+        let right_val = self.interpret(bin_expr.right());
+        match (&left_val, bin_expr.op().kind(), &right_val) {
+            (Value::Number(left), SyntaxKind::Plus, Value::Number(right)) => {
+                Value::Number(left + right)
+            }
+            (Value::Number(left), SyntaxKind::Minus, Value::Number(right)) => {
+                Value::Number(left - right)
+            }
+            (Value::Number(left), SyntaxKind::Slash, Value::Number(right)) => {
+                Value::Number(left / right)
+            }
+            (Value::Number(left), SyntaxKind::Star, Value::Number(right)) => {
+                Value::Number(left * right)
+            }
+            (Value::Number(left), SyntaxKind::Greater, Value::Number(right)) => {
+                Value::Bool(left > right)
+            }
+            (Value::Number(left), SyntaxKind::GreaterEqual, Value::Number(right)) => {
+                Value::Bool(left >= right)
+            }
+            (Value::Number(left), SyntaxKind::Less, Value::Number(right)) => {
+                Value::Bool(left < right)
+            }
+            (Value::Number(left), SyntaxKind::LessEqual, Value::Number(right)) => {
+                Value::Bool(left <= right)
+            }
+            (Value::String(left), SyntaxKind::Plus, Value::String(right)) => {
+                Value::String(left.to_string() + right)
+            }
+            (_, SyntaxKind::EqualEqual, _) => Value::Bool(left_val == right_val),
+            (_, SyntaxKind::BangEqual, _) => Value::Bool(left_val != right_val),
+            _ => panic!("Invalid Binary Expr: {}", syntax_node),
         }
     }
 
@@ -32,7 +72,7 @@ impl Interpreter {
         match (unary_expr.op().kind(), &value) {
             (SyntaxKind::Minus, Value::Number(n)) => Value::Number(-n),
             (SyntaxKind::Bang, _) => Value::Bool(!Self::is_truthy(&value)),
-            _ => panic!("Invalid Unary Expr: {:?}", syntax_node),
+            _ => panic!("Invalid Unary Expr: {}", syntax_node),
         }
     }
 
@@ -96,5 +136,25 @@ mod tests {
         check_interpret("!false", Value::Bool(true));
         check_interpret("!!!false", Value::Bool(true));
         check_interpret("-3", Value::Number(-3.));
+    }
+
+    #[test]
+    fn binary() {
+        check_interpret("1 + 2", Value::Number(3.));
+        check_interpret("1 - 2", Value::Number(-1.));
+        check_interpret("1 / 2", Value::Number(0.5));
+        check_interpret("1 * 2", Value::Number(2.));
+        check_interpret("1 > 2", Value::Bool(false));
+        check_interpret("1 >= 2", Value::Bool(false));
+        check_interpret("1 < 2", Value::Bool(true));
+        check_interpret("1 <= 2", Value::Bool(true));
+        check_interpret("1 == 2", Value::Bool(false));
+        check_interpret("nil == nil", Value::Bool(true));
+        check_interpret("nil == 1", Value::Bool(false));
+        check_interpret("1 != 2", Value::Bool(true));
+        check_interpret(
+            "\"hello \" + \"world\"",
+            Value::String("hello world".to_string()),
+        );
     }
 }
