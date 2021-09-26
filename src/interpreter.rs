@@ -1,52 +1,57 @@
 use crate::ast::{self, AstNode};
+use crate::env::Environment;
 use crate::green::SyntaxNode;
 use crate::kinds::SyntaxKind;
-use std::fmt;
+use crate::value::Value;
 
-#[derive(Debug, PartialEq)]
-pub enum Value {
-    Bool(bool),
-    String(String),
-    Number(f32),
-    Nil,
+pub struct Interpreter {
+    env: Environment,
 }
-
-impl fmt::Display for Value {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Value::Bool(b) => fmt::Display::fmt(b, f),
-            Value::String(s) => fmt::Display::fmt(s, f),
-            Value::Number(n) => fmt::Display::fmt(n, f),
-            Value::Nil => fmt::Display::fmt("nil", f),
-        }
-    }
-}
-
-pub struct Interpreter {}
 
 impl Interpreter {
     pub fn default() -> Interpreter {
-        Interpreter {}
+        Interpreter {
+            env: Environment::default(),
+        }
     }
 
-    pub fn interpret(&self, syntax_node: SyntaxNode) -> Value {
+    pub fn interpret(&mut self, syntax_node: SyntaxNode) -> Value {
         match syntax_node.kind() {
             SyntaxKind::Literal => self.evaluate_literal(syntax_node),
             SyntaxKind::UnaryExpr => self.evaluate_unary(syntax_node),
             SyntaxKind::BinExpr => self.evaluate_binary(syntax_node),
             SyntaxKind::Print => self.print(syntax_node),
+            SyntaxKind::Var => self.var_declaration(syntax_node),
+            SyntaxKind::Identifier => self.identifier(syntax_node),
             _ => panic!("{:?} can not be interpreted", syntax_node.kind()),
         }
     }
 
-    fn print(&self, syntax_node: SyntaxNode) -> Value {
+    fn identifier(&mut self, syntax_node: SyntaxNode) -> Value {
+        let ident = ast::Identifier::cast(syntax_node).unwrap();
+        let value = self
+            .env
+            .get(&ident.name())
+            .expect(&format!("undefind variable {}", ident.name()));
+        value.clone()
+    }
+
+    fn var_declaration(&mut self, syntax_node: SyntaxNode) -> Value {
+        let var_declaration = ast::VarDeclaration::cast(syntax_node).unwrap();
+        let ident = var_declaration.ident();
+        let initial_value = self.interpret(var_declaration.initializer());
+        self.env.define(ident.text(), initial_value);
+        Value::Nil
+    }
+
+    fn print(&mut self, syntax_node: SyntaxNode) -> Value {
         let print = ast::Print::cast(syntax_node).unwrap();
         let value = self.interpret(print.expr());
         println!("{}", value);
         Value::Nil
     }
 
-    fn evaluate_binary(&self, syntax_node: SyntaxNode) -> Value {
+    fn evaluate_binary(&mut self, syntax_node: SyntaxNode) -> Value {
         assert_eq!(syntax_node.kind(), SyntaxKind::BinExpr);
         let bin_expr = ast::BinExpr::cast(syntax_node.clone()).unwrap();
         let left_val = self.interpret(bin_expr.left());
@@ -85,7 +90,7 @@ impl Interpreter {
         }
     }
 
-    fn evaluate_unary(&self, syntax_node: SyntaxNode) -> Value {
+    fn evaluate_unary(&mut self, syntax_node: SyntaxNode) -> Value {
         assert_eq!(syntax_node.kind(), SyntaxKind::UnaryExpr);
         let unary_expr = ast::UnaryExpr::cast(syntax_node.clone()).unwrap();
         let value = self.interpret(unary_expr.node());
@@ -136,9 +141,9 @@ mod tests {
         let mut scanner = Scanner::new(source);
         let tokens = scanner.scan().cloned().collect();
         let mut parser = Parser::new(tokens);
-        let syntax_node = parser.parse();
-        let interpreter = Interpreter::default();
-        let value = interpreter.interpret(syntax_node);
+        let mut stmts = parser.parse();
+        let mut interpreter = Interpreter::default();
+        let value = interpreter.interpret(stmts.next().unwrap().clone());
         assert_eq!(value, expected);
     }
 

@@ -138,3 +138,66 @@ impl Print {
             .unwrap()
     }
 }
+
+pub struct VarDeclaration(SyntaxNode);
+impl AstNode for VarDeclaration {
+    fn cast(node: SyntaxNode) -> Option<Self>
+    where
+        Self: Sized,
+    {
+        if node.kind() == SyntaxKind::Var {
+            Some(VarDeclaration(node))
+        } else {
+            None
+        }
+    }
+
+    fn syntax(&self) -> &SyntaxNode {
+        &self.0
+    }
+}
+
+impl VarDeclaration {
+    pub fn ident(&self) -> SyntaxToken {
+        self.syntax()
+            .children()
+            .find_map(SyntaxElement::into_token)
+            .unwrap()
+    }
+
+    pub fn initializer(&self) -> SyntaxNode {
+        self.syntax()
+            .children()
+            .find_map(SyntaxElement::into_node)
+            .unwrap()
+    }
+}
+
+pub struct Identifier(SyntaxNode);
+impl AstNode for Identifier {
+    fn cast(node: SyntaxNode) -> Option<Self>
+    where
+        Self: Sized,
+    {
+        if node.kind() == SyntaxKind::Identifier {
+            Some(Identifier(node))
+        } else {
+            None
+        }
+    }
+
+    fn syntax(&self) -> &SyntaxNode {
+        &self.0
+    }
+}
+
+impl Identifier {
+    pub fn name(&self) -> String {
+        let token = self
+            .syntax()
+            .children()
+            .find_map(SyntaxElement::into_token)
+            .unwrap();
+        token.text().to_string()
+    }
+}

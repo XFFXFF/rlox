@@ -7,3 +7,5 @@ pub use scanner::Scanner;
 mod ast;
 mod interpreter;
 pub use interpreter::Interpreter;
+mod env;
+mod value;

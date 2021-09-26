@@ -11,19 +11,39 @@ impl Parser {
         Parser { tokens, current: 0 }
     }
 
-    pub fn parse(&mut self) -> SyntaxNode {
-        self.statement()
+    pub fn parse(&mut self) -> impl Iterator<Item = SyntaxNode> {
+        let mut statements = Vec::new();
+        while let Some(_) = self.peek() {
+            statements.push(self.statement());
+        }
+        statements.into_iter()
     }
 
     fn statement(&mut self) -> SyntaxNode {
         if let Some(token) = self.peek() {
             let stmt = match token.kind() {
                 SyntaxKind::Print => self.print(),
+                SyntaxKind::Var => self.var_declaration(),
                 _ => self.expression(),
             };
             return stmt;
         }
         panic!("No more tokens left.");
+    }
+
+    fn var_declaration(&mut self) -> SyntaxNode {
+        assert_eq!(self.peek().unwrap().kind(), SyntaxKind::Var);
+        self.consume(SyntaxKind::Var, "Expect 'Var' keyword");
+        let ident = self.consume(SyntaxKind::Identifier, "Expect an Identifier");
+        let initializer = match self.peek().unwrap().kind() {
+            SyntaxKind::Equal => {
+                self.advance();
+                self.expression()
+            }
+            _ => SyntaxNode::new(SyntaxKind::Nil, vec![]),
+        };
+        self.consume(SyntaxKind::Semicolon, "Expect ';' after value.");
+        SyntaxNode::new(SyntaxKind::Var, vec![ident.into(), initializer.into()])
     }
 
     fn print(&mut self) -> SyntaxNode {
@@ -142,6 +162,9 @@ impl Parser {
                 | SyntaxKind::Nil
                 | SyntaxKind::Number
                 | SyntaxKind::String => SyntaxNode::new(SyntaxKind::Literal, vec![token.into()]),
+                SyntaxKind::Identifier => {
+                    SyntaxNode::new(SyntaxKind::Identifier, vec![token.into()])
+                }
                 _ => panic!("{:?} unimplemented", token.kind()),
             };
             return node;
@@ -157,11 +180,12 @@ impl Parser {
         self.current += 1;
     }
 
-    fn consume(&mut self, kind: SyntaxKind, error: &'static str) {
+    fn consume(&mut self, kind: SyntaxKind, error: &'static str) -> SyntaxToken {
         let token = self.peek().expect(error);
         if token.kind() != kind {
             panic!("{}", error);
         }
         self.advance();
+        token
     }
 }
