@@ -23,8 +23,17 @@ impl Interpreter {
             SyntaxKind::Print => self.print(syntax_node),
             SyntaxKind::Var => self.var_declaration(syntax_node),
             SyntaxKind::Identifier => self.identifier(syntax_node),
+            SyntaxKind::Block => self.block(syntax_node),
             _ => panic!("{:?} can not be interpreted", syntax_node.kind()),
         }
+    }
+
+    fn block(&mut self, syntax_node: SyntaxNode) -> Value {
+        let block = ast::Block::cast(syntax_node).unwrap();
+        for child in block.children() {
+            self.interpret(child);
+        }
+        Value::Nil
     }
 
     fn identifier(&mut self, syntax_node: SyntaxNode) -> Value {

@@ -201,3 +201,26 @@ impl Identifier {
         token.text().to_string()
     }
 }
+
+pub struct Block(SyntaxNode);
+impl AstNode for Block {
+    fn cast(node: SyntaxNode) -> Option<Self>
+    where
+        Self: Sized {
+        if node.kind() == SyntaxKind::Block {
+            Some(Block(node))
+        } else {
+            None
+        }
+    }
+
+    fn syntax(&self) -> &SyntaxNode {
+        &self.0
+    }
+}
+
+impl Block {
+    pub fn children(&self) -> impl Iterator<Item = SyntaxNode> + '_ {
+        self.syntax().children().filter_map(SyntaxElement::into_node)
+    }
+}

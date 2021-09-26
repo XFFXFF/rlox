@@ -51,4 +51,5 @@ pub enum SyntaxKind {
     Literal,
     UnaryExpr,
     BinExpr,
+    Block,
 }

@@ -1,4 +1,4 @@
-use crate::green::{SyntaxNode, SyntaxToken};
+use crate::green::{SyntaxElement, SyntaxNode, SyntaxToken};
 use crate::kinds::SyntaxKind;
 
 pub struct Parser {
@@ -24,11 +24,26 @@ impl Parser {
             let stmt = match token.kind() {
                 SyntaxKind::Print => self.print(),
                 SyntaxKind::Var => self.var_declaration(),
+                SyntaxKind::LeftBrace => self.block(),
                 _ => self.expression(),
             };
             return stmt;
         }
         panic!("No more tokens left.");
+    }
+
+    fn block(&mut self) -> SyntaxNode {
+        let mut stmts = Vec::new();
+        self.consume(SyntaxKind::LeftBrace, "Expect '{' before block");
+        while let Some(token) = self.peek() {
+            match token.kind() {
+                SyntaxKind::RightBrace => break,
+                _ => stmts.push(self.statement())
+            }
+        }
+        self.consume(SyntaxKind::RightBrace, "Expect '}' after block");
+        let stmts = stmts.into_iter().map(|stmt| stmt.into()).collect::<Vec<SyntaxElement>>();
+        SyntaxNode::new(SyntaxKind::Block, stmts)
     }
 
     fn var_declaration(&mut self) -> SyntaxNode {
