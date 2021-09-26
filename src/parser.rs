@@ -12,6 +12,30 @@ impl Parser {
     }
 
     pub fn parse(&mut self) -> SyntaxNode {
+        self.statement()
+    }
+
+    fn statement(&mut self) -> SyntaxNode {
+        if let Some(token) = self.peek() {
+            let stmt = match token.kind() {
+                SyntaxKind::Print => self.print(),
+                _ => self.expression(),
+            };
+            return stmt;
+        }
+        panic!("No more tokens left.");
+    }
+
+    fn print(&mut self) -> SyntaxNode {
+        let token = self.peek().unwrap();
+        assert_eq!(token.kind(), SyntaxKind::Print);
+        self.advance();
+        let expr = self.expression();
+        self.consume(SyntaxKind::Semicolon, "Expect ';' after value.");
+        SyntaxNode::new(SyntaxKind::Print, vec![token.into(), expr.into()])
+    }
+
+    fn expression(&mut self) -> SyntaxNode {
         self.equality()
     }
 
@@ -132,66 +156,12 @@ impl Parser {
     fn advance(&mut self) {
         self.current += 1;
     }
-}
 
-#[cfg(test)]
-mod tests {
-    use super::Parser;
-    use crate::{kinds::SyntaxKind, scanner::Scanner};
-
-    fn check_parse(source: &str, expected_kind: SyntaxKind) {
-        let mut scanner = Scanner::new(source);
-        let tokens = scanner.scan().cloned().collect();
-        let mut parser = Parser::new(tokens);
-        let node = parser.parse();
-        assert_eq!(node.kind(), expected_kind);
-        let source_without_whitespace = source
-            .chars()
-            .filter(|c| !c.is_whitespace())
-            .collect::<String>();
-        assert_eq!(source_without_whitespace, format!("{}", node));
-    }
-
-    #[test]
-    fn primary() {
-        check_parse("1", SyntaxKind::Literal);
-        check_parse("true", SyntaxKind::Literal);
-        check_parse("false", SyntaxKind::Literal);
-        check_parse("nil", SyntaxKind::Literal);
-        check_parse("\"hello\"", SyntaxKind::Literal);
-    }
-
-    #[test]
-    fn unary() {
-        check_parse("!true", SyntaxKind::UnaryExpr);
-        check_parse("!false", SyntaxKind::UnaryExpr);
-        check_parse("!!false", SyntaxKind::UnaryExpr);
-    }
-
-    #[test]
-    fn factor() {
-        check_parse("1 / 2", SyntaxKind::BinExpr);
-        check_parse("-1 * 2 / 3", SyntaxKind::BinExpr);
-    }
-
-    #[test]
-    fn term() {
-        check_parse("1 + 2", SyntaxKind::BinExpr);
-        check_parse("1 - 2 + 2", SyntaxKind::BinExpr);
-        check_parse("-1 - 2 / 2", SyntaxKind::BinExpr);
-    }
-
-    #[test]
-    fn comparison() {
-        check_parse("1 > 2", SyntaxKind::BinExpr);
-        check_parse("1 >= 2", SyntaxKind::BinExpr);
-        check_parse("1 < 2", SyntaxKind::BinExpr);
-        check_parse("1 <= 2", SyntaxKind::BinExpr);
-    }
-
-    #[test]
-    fn equality() {
-        check_parse("1 == 2", SyntaxKind::BinExpr);
-        check_parse("1 != 2", SyntaxKind::BinExpr);
+    fn consume(&mut self, kind: SyntaxKind, error: &'static str) {
+        let token = self.peek().expect(error);
+        if token.kind() != kind {
+            panic!("{}", error);
+        }
+        self.advance();
     }
 }

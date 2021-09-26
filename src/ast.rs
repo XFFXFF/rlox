@@ -111,3 +111,30 @@ impl BinExpr {
             .unwrap()
     }
 }
+
+pub struct Print(SyntaxNode);
+impl AstNode for Print {
+    fn cast(node: SyntaxNode) -> Option<Self>
+    where
+        Self: Sized,
+    {
+        if node.kind() == SyntaxKind::Print {
+            Some(Print(node))
+        } else {
+            None
+        }
+    }
+
+    fn syntax(&self) -> &SyntaxNode {
+        &self.0
+    }
+}
+
+impl Print {
+    pub fn expr(&self) -> SyntaxNode {
+        self.syntax()
+            .children()
+            .find_map(SyntaxElement::into_node)
+            .unwrap()
+    }
+}

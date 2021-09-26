@@ -1,6 +1,7 @@
 use crate::ast::{self, AstNode};
 use crate::green::SyntaxNode;
 use crate::kinds::SyntaxKind;
+use std::fmt;
 
 #[derive(Debug, PartialEq)]
 pub enum Value {
@@ -8,6 +9,17 @@ pub enum Value {
     String(String),
     Number(f32),
     Nil,
+}
+
+impl fmt::Display for Value {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Value::Bool(b) => fmt::Display::fmt(b, f),
+            Value::String(s) => fmt::Display::fmt(s, f),
+            Value::Number(n) => fmt::Display::fmt(n, f),
+            Value::Nil => fmt::Display::fmt("nil", f),
+        }
+    }
 }
 
 pub struct Interpreter {}
@@ -22,8 +34,16 @@ impl Interpreter {
             SyntaxKind::Literal => self.evaluate_literal(syntax_node),
             SyntaxKind::UnaryExpr => self.evaluate_unary(syntax_node),
             SyntaxKind::BinExpr => self.evaluate_binary(syntax_node),
+            SyntaxKind::Print => self.print(syntax_node),
             _ => panic!("{:?} can not be interpreted", syntax_node.kind()),
         }
+    }
+
+    fn print(&self, syntax_node: SyntaxNode) -> Value {
+        let print = ast::Print::cast(syntax_node).unwrap();
+        let value = self.interpret(print.expr());
+        println!("{}", value);
+        Value::Nil
     }
 
     fn evaluate_binary(&self, syntax_node: SyntaxNode) -> Value {
