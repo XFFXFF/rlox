@@ -22,7 +22,7 @@ impl Environment {
         }
     }
 
-    pub fn assign(&mut self, name: &str, value: Value) {
+    pub fn define(&mut self, name: &str, value: Value) {
         self.values.insert(name.to_string(), value);
     }
 

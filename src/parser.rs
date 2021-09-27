@@ -27,7 +27,7 @@ impl Parser {
                 SyntaxKind::LeftBrace => self.block(),
                 SyntaxKind::If => self.if_condition(),
                 SyntaxKind::While => self.while_condition(),
-                _ => self.expression(),
+                _ => self.expression_stmt(),
             };
             return stmt;
         }
@@ -103,8 +103,27 @@ impl Parser {
         SyntaxNode::new(SyntaxKind::Print, vec![token.into(), expr.into()])
     }
 
+    fn expression_stmt(&mut self) -> SyntaxNode {
+        let expression = self.expression();
+        self.consume(SyntaxKind::Semicolon, "Expect ';' after expression.");
+        expression
+    }
+
     fn expression(&mut self) -> SyntaxNode {
-        self.or()
+        self.assignment()
+    }
+
+    fn assignment(&mut self) -> SyntaxNode {
+        let var = self.or();
+
+        if let Some(token) = self.peek() {
+            if token.kind() == SyntaxKind::Equal {
+                self.advance();
+                let value = self.assignment();
+                return SyntaxNode::new(SyntaxKind::Assign, vec![var.into(), value.into()]);
+            }
+        }
+        var
     }
 
     fn or(&mut self) -> SyntaxNode {

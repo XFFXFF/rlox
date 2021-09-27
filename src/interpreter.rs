@@ -27,14 +27,24 @@ impl Interpreter {
             SyntaxKind::If => self.if_condition(syntax_node),
             SyntaxKind::And | SyntaxKind::Or => self.logical(syntax_node),
             SyntaxKind::While => self.while_condition(syntax_node),
+            SyntaxKind::Assign => self.assign(syntax_node),
             _ => panic!("{:?} can not be interpreted", syntax_node.kind()),
         }
     }
 
+    fn assign(&mut self, syntax_node: SyntaxNode) -> Value {
+        let assign = ast::Assign::cast(syntax_node).unwrap();
+        let var_name = assign.var_name();
+        if let Some(_) = self.env.get(&var_name) {
+            let value = self.interpret(assign.value());
+            self.env.define(&var_name, value);
+        }
+        Value::Nil
+    }
+
     fn while_condition(&mut self, syntax_node: SyntaxNode) -> Value {
         let while_condition = ast::While::cast(syntax_node).unwrap();
-        let condition = self.interpret(while_condition.condition());
-        while Self::is_truthy(&condition) {
+        while Self::is_truthy(&self.interpret(while_condition.condition())) {
             self.interpret(while_condition.body());
         }
         Value::Nil
@@ -94,7 +104,7 @@ impl Interpreter {
         let var_declaration = ast::VarDeclaration::cast(syntax_node).unwrap();
         let ident = var_declaration.ident();
         let initial_value = self.interpret(var_declaration.initializer());
-        self.env.assign(ident.text(), initial_value);
+        self.env.define(ident.text(), initial_value);
         Value::Nil
     }
 

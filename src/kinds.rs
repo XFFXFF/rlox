@@ -53,4 +53,5 @@ pub enum SyntaxKind {
     BinExpr,
     Block,
     Logical,
+    Assign,
 }

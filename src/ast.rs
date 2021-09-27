@@ -344,3 +344,41 @@ impl While {
             .unwrap()
     }
 }
+
+pub struct Assign(SyntaxNode);
+impl AstNode for Assign {
+    fn cast(node: SyntaxNode) -> Option<Self>
+    where
+        Self: Sized,
+    {
+        if node.kind() == SyntaxKind::Assign {
+            Some(Assign(node))
+        } else {
+            None
+        }
+    }
+
+    fn syntax(&self) -> &SyntaxNode {
+        &self.0
+    }
+}
+
+impl Assign {
+    pub fn var_name(&self) -> String {
+        let var = self
+            .syntax()
+            .children()
+            .find_map(SyntaxElement::into_node)
+            .unwrap();
+        let var_token = var.children().find_map(SyntaxElement::into_token).unwrap();
+        var_token.text().to_string()
+    }
+
+    pub fn value(&self) -> SyntaxNode {
+        self.syntax()
+            .children()
+            .filter_map(SyntaxElement::into_node)
+            .last()
+            .unwrap()
+    }
+}
