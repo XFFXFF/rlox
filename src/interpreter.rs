@@ -29,10 +29,13 @@ impl Interpreter {
     }
 
     fn block(&mut self, syntax_node: SyntaxNode) -> Value {
+        let previous_env = self.env.clone();
+        self.env = Environment::new(previous_env.clone());
         let block = ast::Block::cast(syntax_node).unwrap();
         for child in block.children() {
             self.interpret(child);
         }
+        self.env = previous_env;
         Value::Nil
     }
 
@@ -42,14 +45,14 @@ impl Interpreter {
             .env
             .get(&ident.name())
             .expect(&format!("undefind variable {}", ident.name()));
-        value.clone()
+        value
     }
 
     fn var_declaration(&mut self, syntax_node: SyntaxNode) -> Value {
         let var_declaration = ast::VarDeclaration::cast(syntax_node).unwrap();
         let ident = var_declaration.ident();
         let initial_value = self.interpret(var_declaration.initializer());
-        self.env.define(ident.text(), initial_value);
+        self.env.assign(ident.text(), initial_value);
         Value::Nil
     }
 
