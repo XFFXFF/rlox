@@ -98,32 +98,38 @@ impl Parser {
     }
 
     fn or(&mut self) -> SyntaxNode {
-        let left = self.and();
+        let mut left = self.and();
 
-        if let Some(token) = self.peek() {
-            if SyntaxKind::Or == token.kind() {
-                self.advance();
-                let right = self.and();
-                return SyntaxNode::new(
-                    SyntaxKind::Or,
-                    vec![left.into(), token.into(), right.into()],
-                );
+        while let Some(token) = self.peek() {
+            match token.kind() {
+                SyntaxKind::Or => {
+                    self.advance();
+                    let right = self.and();
+                    left = SyntaxNode::new(
+                        SyntaxKind::Or,
+                        vec![left.into(), token.into(), right.into()],
+                    );
+                }
+                _ => break,
             }
         }
         left
     }
 
     fn and(&mut self) -> SyntaxNode {
-        let left = self.equality();
+        let mut left = self.equality();
 
-        if let Some(token) = self.peek() {
-            if SyntaxKind::And == token.kind() {
-                self.advance();
-                let right = self.equality();
-                return SyntaxNode::new(
-                    SyntaxKind::And,
-                    vec![left.into(), token.into(), right.into()],
-                );
+        while let Some(token) = self.peek() {
+            match token.kind() {
+                SyntaxKind::And => {
+                    self.advance();
+                    let right = self.equality();
+                    left = SyntaxNode::new(
+                        SyntaxKind::And,
+                        vec![left.into(), token.into(), right.into()],
+                    );
+                }
+                _ => break,
             }
         }
         left
