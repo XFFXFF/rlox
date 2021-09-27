@@ -308,3 +308,39 @@ impl Logical {
             .unwrap()
     }
 }
+
+pub struct While(SyntaxNode);
+impl AstNode for While {
+    fn cast(node: SyntaxNode) -> Option<Self>
+    where
+        Self: Sized,
+    {
+        if node.kind() == SyntaxKind::While {
+            Some(While(node))
+        } else {
+            None
+        }
+    }
+
+    fn syntax(&self) -> &SyntaxNode {
+        &self.0
+    }
+}
+
+impl While {
+    pub fn condition(&self) -> SyntaxNode {
+        self.syntax()
+            .children()
+            .filter_map(SyntaxElement::into_node)
+            .next()
+            .unwrap()
+    }
+
+    pub fn body(&self) -> SyntaxNode {
+        self.syntax()
+            .children()
+            .filter_map(SyntaxElement::into_node)
+            .last()
+            .unwrap()
+    }
+}

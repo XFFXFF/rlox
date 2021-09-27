@@ -26,11 +26,21 @@ impl Parser {
                 SyntaxKind::Var => self.var_declaration(),
                 SyntaxKind::LeftBrace => self.block(),
                 SyntaxKind::If => self.if_condition(),
+                SyntaxKind::While => self.while_condition(),
                 _ => self.expression(),
             };
             return stmt;
         }
         panic!("No more tokens left.");
+    }
+
+    fn while_condition(&mut self) -> SyntaxNode {
+        self.consume(SyntaxKind::While, "Expect 'while' keyword");
+        self.consume(SyntaxKind::LeftParen, "Expect '(' after 'if'");
+        let condition = self.expression();
+        self.consume(SyntaxKind::RightParen, "Expect ')' after 'if' condition");
+        let body = self.statement();
+        SyntaxNode::new(SyntaxKind::While, vec![condition.into(), body.into()])
     }
 
     fn if_condition(&mut self) -> SyntaxNode {

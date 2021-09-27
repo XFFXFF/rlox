@@ -26,8 +26,18 @@ impl Interpreter {
             SyntaxKind::Block => self.block(syntax_node),
             SyntaxKind::If => self.if_condition(syntax_node),
             SyntaxKind::And | SyntaxKind::Or => self.logical(syntax_node),
+            SyntaxKind::While => self.while_condition(syntax_node),
             _ => panic!("{:?} can not be interpreted", syntax_node.kind()),
         }
+    }
+
+    fn while_condition(&mut self, syntax_node: SyntaxNode) -> Value {
+        let while_condition = ast::While::cast(syntax_node).unwrap();
+        let condition = self.interpret(while_condition.condition());
+        while Self::is_truthy(&condition) {
+            self.interpret(while_condition.body());
+        }
+        Value::Nil
     }
 
     fn logical(&mut self, syntax_node: SyntaxNode) -> Value {
