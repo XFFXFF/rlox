@@ -94,7 +94,39 @@ impl Parser {
     }
 
     fn expression(&mut self) -> SyntaxNode {
-        self.equality()
+        self.or()
+    }
+
+    fn or(&mut self) -> SyntaxNode {
+        let left = self.and();
+
+        if let Some(token) = self.peek() {
+            if SyntaxKind::Or == token.kind() {
+                self.advance();
+                let right = self.and();
+                return SyntaxNode::new(
+                    SyntaxKind::Or,
+                    vec![left.into(), token.into(), right.into()],
+                );
+            }
+        }
+        left
+    }
+
+    fn and(&mut self) -> SyntaxNode {
+        let left = self.equality();
+
+        if let Some(token) = self.peek() {
+            if SyntaxKind::And == token.kind() {
+                self.advance();
+                let right = self.equality();
+                return SyntaxNode::new(
+                    SyntaxKind::And,
+                    vec![left.into(), token.into(), right.into()],
+                );
+            }
+        }
+        left
     }
 
     fn equality(&mut self) -> SyntaxNode {

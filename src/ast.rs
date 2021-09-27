@@ -270,3 +270,41 @@ impl If {
             .nth(2)
     }
 }
+
+pub struct Logical(SyntaxNode);
+impl AstNode for Logical {
+    fn cast(node: SyntaxNode) -> Option<Self>
+    where
+        Self: Sized,
+    {
+        match node.kind() {
+            SyntaxKind::And | SyntaxKind::Or => Some(Logical(node)),
+            _ => None,
+        }
+    }
+
+    fn syntax(&self) -> &SyntaxNode {
+        &self.0
+    }
+}
+
+impl Logical {
+    pub fn left(&self) -> SyntaxNode {
+        self.syntax()
+            .children()
+            .find_map(SyntaxElement::into_node)
+            .unwrap()
+    }
+
+    pub fn kind(&self) -> SyntaxKind {
+        self.syntax().kind()
+    }
+
+    pub fn right(&self) -> SyntaxNode {
+        self.syntax()
+            .children()
+            .filter_map(SyntaxElement::into_node)
+            .last()
+            .unwrap()
+    }
+}

@@ -25,8 +25,28 @@ impl Interpreter {
             SyntaxKind::Identifier => self.identifier(syntax_node),
             SyntaxKind::Block => self.block(syntax_node),
             SyntaxKind::If => self.if_condition(syntax_node),
+            SyntaxKind::And | SyntaxKind::Or => self.logical(syntax_node),
             _ => panic!("{:?} can not be interpreted", syntax_node.kind()),
         }
+    }
+
+    fn logical(&mut self, syntax_node: SyntaxNode) -> Value {
+        let logical = ast::Logical::cast(syntax_node).unwrap();
+        let left_val = self.interpret(logical.left());
+        match logical.kind() {
+            SyntaxKind::And => {
+                if !Self::is_truthy(&left_val) {
+                    return left_val;
+                }
+            }
+            SyntaxKind::Or => {
+                if Self::is_truthy(&left_val) {
+                    return left_val;
+                }
+            }
+            _ => panic!("Unexpected logical kind: {:?}", logical.kind()),
+        }
+        self.interpret(logical.right())
     }
 
     fn if_condition(&mut self, syntax_node: SyntaxNode) -> Value {
