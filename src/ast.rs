@@ -206,7 +206,8 @@ pub struct Block(SyntaxNode);
 impl AstNode for Block {
     fn cast(node: SyntaxNode) -> Option<Self>
     where
-        Self: Sized {
+        Self: Sized,
+    {
         if node.kind() == SyntaxKind::Block {
             Some(Block(node))
         } else {
@@ -221,6 +222,8 @@ impl AstNode for Block {
 
 impl Block {
     pub fn children(&self) -> impl Iterator<Item = SyntaxNode> + '_ {
-        self.syntax().children().filter_map(SyntaxElement::into_node)
+        self.syntax()
+            .children()
+            .filter_map(SyntaxElement::into_node)
     }
 }

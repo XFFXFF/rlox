@@ -1,5 +1,5 @@
 mod green;
-pub use green::{SyntaxNode, SyntaxToken, SyntaxElement};
+pub use green::{SyntaxElement, SyntaxNode, SyntaxToken};
 mod kinds;
 mod parser;
 pub use parser::Parser;

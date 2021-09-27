@@ -38,11 +38,14 @@ impl Parser {
         while let Some(token) = self.peek() {
             match token.kind() {
                 SyntaxKind::RightBrace => break,
-                _ => stmts.push(self.statement())
+                _ => stmts.push(self.statement()),
             }
         }
         self.consume(SyntaxKind::RightBrace, "Expect '}' after block");
-        let stmts = stmts.into_iter().map(|stmt| stmt.into()).collect::<Vec<SyntaxElement>>();
+        let stmts = stmts
+            .into_iter()
+            .map(|stmt| stmt.into())
+            .collect::<Vec<SyntaxElement>>();
         SyntaxNode::new(SyntaxKind::Block, stmts)
     }
 
