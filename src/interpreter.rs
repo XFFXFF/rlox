@@ -24,8 +24,20 @@ impl Interpreter {
             SyntaxKind::Var => self.var_declaration(syntax_node),
             SyntaxKind::Identifier => self.identifier(syntax_node),
             SyntaxKind::Block => self.block(syntax_node),
+            SyntaxKind::If => self.if_condition(syntax_node),
             _ => panic!("{:?} can not be interpreted", syntax_node.kind()),
         }
+    }
+
+    fn if_condition(&mut self, syntax_node: SyntaxNode) -> Value {
+        let if_condition = ast::If::cast(syntax_node).unwrap();
+        let condition = self.interpret(if_condition.condition());
+        if let Value::Bool(true) = condition {
+            self.interpret(if_condition.then_branch());
+        } else if let Some(else_branch) = if_condition.else_branch() {
+            self.interpret(else_branch);
+        }
+        Value::Nil
     }
 
     fn block(&mut self, syntax_node: SyntaxNode) -> Value {

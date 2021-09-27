@@ -79,7 +79,7 @@ impl Scanner {
 
                 'a'..='z' | 'A'..='Z' | '_' => self.identifier(),
 
-                _ => panic!("Unexpected character."),
+                _ => panic!("Unexpected character: {}.", c),
             }
         }
         self.tokens.iter()

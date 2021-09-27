@@ -25,11 +25,31 @@ impl Parser {
                 SyntaxKind::Print => self.print(),
                 SyntaxKind::Var => self.var_declaration(),
                 SyntaxKind::LeftBrace => self.block(),
+                SyntaxKind::If => self.if_condition(),
                 _ => self.expression(),
             };
             return stmt;
         }
         panic!("No more tokens left.");
+    }
+
+    fn if_condition(&mut self) -> SyntaxNode {
+        self.consume(SyntaxKind::If, "Expect 'if' keyword");
+        self.consume(SyntaxKind::LeftParen, "Expect '(' after 'if'");
+        let condition = self.expression();
+        self.consume(SyntaxKind::RightParen, "Expect ')' after 'if' condition");
+        let then_branch = self.statement();
+        if let Some(token) = self.peek() {
+            if let SyntaxKind::Else = token.kind() {
+                self.advance();
+                let else_branch = self.statement();
+                return SyntaxNode::new(
+                    SyntaxKind::If,
+                    vec![condition.into(), then_branch.into(), else_branch.into()],
+                );
+            }
+        }
+        SyntaxNode::new(SyntaxKind::If, vec![condition.into(), then_branch.into()])
     }
 
     fn block(&mut self) -> SyntaxNode {

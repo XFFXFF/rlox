@@ -227,3 +227,46 @@ impl Block {
             .filter_map(SyntaxElement::into_node)
     }
 }
+
+pub struct If(SyntaxNode);
+impl AstNode for If {
+    fn cast(node: SyntaxNode) -> Option<Self>
+    where
+        Self: Sized,
+    {
+        if node.kind() == SyntaxKind::If {
+            Some(If(node))
+        } else {
+            None
+        }
+    }
+
+    fn syntax(&self) -> &SyntaxNode {
+        &self.0
+    }
+}
+
+impl If {
+    pub fn condition(&self) -> SyntaxNode {
+        self.syntax()
+            .children()
+            .filter_map(SyntaxElement::into_node)
+            .next()
+            .unwrap()
+    }
+
+    pub fn then_branch(&self) -> SyntaxNode {
+        self.syntax()
+            .children()
+            .filter_map(SyntaxElement::into_node)
+            .nth(1)
+            .unwrap()
+    }
+
+    pub fn else_branch(&self) -> Option<SyntaxNode> {
+        self.syntax()
+            .children()
+            .filter_map(SyntaxElement::into_node)
+            .nth(2)
+    }
+}
