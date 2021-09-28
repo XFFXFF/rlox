@@ -22,6 +22,20 @@ impl Environment {
         }
     }
 
+    pub fn enclosing(&self) -> Option<Environment> {
+        self.enclosing.as_deref().cloned()
+    }
+
+    pub fn assign(&mut self, name: &str, value: Value) {
+        if self.values.contains_key(name) {
+            self.values.insert(name.to_string(), value);
+            return;
+        }
+        if let Some(enclosing) = self.enclosing.as_mut() {
+            enclosing.assign(name, value);
+        }
+    }
+
     pub fn define(&mut self, name: &str, value: Value) {
         self.values.insert(name.to_string(), value);
     }

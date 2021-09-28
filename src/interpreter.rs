@@ -37,7 +37,7 @@ impl Interpreter {
         let var_name = assign.var_name();
         if let Some(_) = self.env.get(&var_name) {
             let value = self.interpret(assign.value());
-            self.env.define(&var_name, value);
+            self.env.assign(&var_name, value);
         }
         Value::Nil
     }
@@ -81,13 +81,12 @@ impl Interpreter {
     }
 
     fn block(&mut self, syntax_node: SyntaxNode) -> Value {
-        let previous_env = self.env.clone();
-        self.env = Environment::new(previous_env.clone());
+        self.env = Environment::new(self.env.clone());
         let block = ast::Block::cast(syntax_node).unwrap();
         for child in block.children() {
             self.interpret(child);
         }
-        self.env = previous_env;
+        self.env = self.env.enclosing().unwrap();
         Value::Nil
     }
 
